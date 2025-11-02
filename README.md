@@ -13,6 +13,7 @@ install_github("amss-stat/GT-Transfer")
  ```
 library(GTT)
 set.seed(4321)
+
 p=0.01
 k=5
 m=500
@@ -20,6 +21,7 @@ pi_1=0.95
 pi_0=0.95
 S1=0.999
 S0=0.999
+
 d=matrix(rbinom(k*m,size=1,prob=p), nrow=k)
 gresult=c()
 for (h in 1:m){
@@ -45,6 +47,7 @@ for (r in retest){
   }
   m_1i[R+1]=m_1i[R+1]+1
 }
+
 g_tilde_j=c()
 p_tilde_j=c()
 v_tilde_j=c()
@@ -63,8 +66,10 @@ while(j<6){
     j=j+1
   }
 }
+
 tran = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j,w = 1,eta = NULL)
 print(tran)
+
 tran_retest = GT_tran_retest(m,k,pi_0,pi_1,S0,S1,m_1,m_1i,p_tilde_j,v_tilde_j,w = 1,eta = NULL)
 print(tran_retest)
  ```
