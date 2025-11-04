@@ -1,6 +1,6 @@
 # GT-Transfer
 We present an integrated multiple knowledge framework to improve the prevalence estimation for group testing data.
-Unlike the existing methods, the proposed method built on the public source summary statistics because of the privacy and ethnicity restrictions.
+Our method built on the public source summary statistics to aviod restriction of experiment setting and data privacy.
 Moreover, we extend the method to retesting design which can further imporve the estimation ability.
 
 ## Installation
