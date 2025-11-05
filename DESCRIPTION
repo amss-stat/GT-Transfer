@@ -1,0 +1,17 @@
+Package: GTtrans
+Title: Transfer Learning in Group Testing
+Version: 0.1
+Data: 2025-11-02
+Author: Yang Wanshuo [aut, cre],
+        Ding Juan [aut],
+        Xiong Wenjun [aut]
+        Wang Shuying [aut]
+        Li Qizhai [aut, ths]
+Maintainer: Wanshuo Yang <yangwanshuo@stu.cqu.edu.cn>
+Description: A transfer learning method is provided for disease prevalence estimation in group testing senario. 
+    It utilizes the summary statistics from source data to imporve the estimation.
+License: GPL-3
+Encoding: UTF-8
+Imports: 
+    stats
+RoxygenNote: 7.3.2
