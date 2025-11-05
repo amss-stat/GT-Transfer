@@ -13,6 +13,7 @@ install_github("amss-stat/GT-Transfer")
 library(GTT)
 set.seed(4321)
 
+# Simulation data
 p=0.01
 k=5
 m=500
@@ -66,6 +67,7 @@ while(j<6){
   }
 }
 
+# Estimation
 tran = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j,w = 1,eta = NULL)
 print(tran)
 
