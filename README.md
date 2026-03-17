@@ -10,7 +10,7 @@ install_github("amss-stat/GT-Transfer")
  ```
 ## Quick start
  ```
-library(GTT)
+library(GTtrans)
 set.seed(4321)
 
 # Simulation data
