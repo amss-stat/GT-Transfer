@@ -1,0 +1,1275 @@
+---
+title: "表3"
+author: "yws"
+date: "2025-10-26"
+output: html_document
+---
+```{r}
+library(GTtrans)
+```
+
+
+# D=0.1p
+
+```{r}
+set.seed(4321)
+p_tilde_data=c()
+p_hat_data=c()
+p_hat_noselect_data=c()
+
+for (i in 1:1000){
+  p=0.01
+  k=5
+  m=500
+  pi_1=0.95
+  pi_0=0.95
+  S1=0.999
+  S0=0.999
+  D=0.1*p
+  d=matrix(rbinom(k*m,size=1,prob=p), nrow=k)
+  gresult=c()
+  for (h in 1:m){
+    if(sum(d[,h])>0){
+      gresult=c(gresult, rbinom(1,1,pi_1))
+    }else{
+      gresult=c(gresult, rbinom(1,1,1-pi_0))
+    }
+  }
+  m_1=sum(gresult)
+  
+  m_1i=rep(0,k+1)
+  retest=which(gresult==1)
+  R=0
+  for (r in retest){
+    R=0
+    for(d_1 in d[,r]){
+      if(d_1>0){
+        R=R+rbinom(1,1,S1)
+      }else{
+        R=R+rbinom(1,1,1-S0)
+      }
+    }
+    m_1i[R+1]=m_1i[R+1]+1
+  }
+  
+  g_tilde=m_1/m
+  p_tilde=1-((pi_1-min(pi_1,max(1-pi_0,g_tilde)))/(pi_0+pi_1-1))^(1/k)
+  
+  if(p_tilde==1){
+    v_tilde=0
+  }else{
+    v_tilde=g_tilde*(1-g_tilde)*(1-p_tilde)^(2-2*k)/((pi_1+pi_0-1)^2*k^2*m)
+  }
+  #开始模拟两个loss function的估计量，只有在v_tilde>0，筛选程序有效的时候才进行估计
+  
+  g_tilde_j=c()
+  p_tilde_j=c()
+  v_tilde_j=c()
+    
+  j=1
+  #辅助样本不允许样本方差为0的情况
+  while(j<6){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  while(j<9){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p+D
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  tran = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j,w = 1,eta = NULL)
+  tran_noselect = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j, screen = F)
+    
+  p_tilde_data = c(p_tilde_data, p_tilde)
+  p_hat_data = c(p_hat_data, tran$p_hat)
+  p_hat_noselect_data = c(p_hat_noselect_data, tran_noselect$p_hat)
+}
+
+MSE_tilde=sum((p_tilde_data-p)^2)/1000
+MSE_hat=sum((p_hat_data-p)^2)/1000
+MSE_hat_noselect=sum((p_hat_noselect_data-p)^2)/1000
+
+MSE_tilde/MSE_hat
+MSE_tilde/MSE_hat_noselect
+
+MSE_tilde
+MSE_hat
+MSE_hat_noselect
+```
+
+```{r}
+set.seed(4321)
+p_tilde_data=c()
+p_hat_data=c()
+p_hat_noselect_data=c()
+
+for (i in 1:1000){
+  p=0.01
+  k=10
+  m=500
+  pi_1=0.95
+  pi_0=0.95
+  S1=0.999
+  S0=0.999
+  D=0.1*p
+  d=matrix(rbinom(k*m,size=1,prob=p), nrow=k)
+  gresult=c()
+  for (h in 1:m){
+    if(sum(d[,h])>0){
+      gresult=c(gresult, rbinom(1,1,pi_1))
+    }else{
+      gresult=c(gresult, rbinom(1,1,1-pi_0))
+    }
+  }
+  m_1=sum(gresult)
+  
+  m_1i=rep(0,k+1)
+  retest=which(gresult==1)
+  R=0
+  for (r in retest){
+    R=0
+    for(d_1 in d[,r]){
+      if(d_1>0){
+        R=R+rbinom(1,1,S1)
+      }else{
+        R=R+rbinom(1,1,1-S0)
+      }
+    }
+    m_1i[R+1]=m_1i[R+1]+1
+  }
+  
+  g_tilde=m_1/m
+  p_tilde=1-((pi_1-min(pi_1,max(1-pi_0,g_tilde)))/(pi_0+pi_1-1))^(1/k)
+  
+  if(p_tilde==1){
+    v_tilde=0
+  }else{
+    v_tilde=g_tilde*(1-g_tilde)*(1-p_tilde)^(2-2*k)/((pi_1+pi_0-1)^2*k^2*m)
+  }
+  #开始模拟两个loss function的估计量，只有在v_tilde>0，筛选程序有效的时候才进行估计
+  
+  g_tilde_j=c()
+  p_tilde_j=c()
+  v_tilde_j=c()
+    
+  j=1
+  #辅助样本不允许样本方差为0的情况
+  while(j<6){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  while(j<9){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p+D
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  tran = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j,w = 1,eta = NULL)
+  tran_noselect = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j, screen = F)
+    
+  p_tilde_data = c(p_tilde_data, p_tilde)
+  p_hat_data = c(p_hat_data, tran$p_hat)
+  p_hat_noselect_data = c(p_hat_noselect_data, tran_noselect$p_hat)
+}
+
+MSE_tilde=sum((p_tilde_data-p)^2)/1000
+MSE_hat=sum((p_hat_data-p)^2)/1000
+MSE_hat_noselect=sum((p_hat_noselect_data-p)^2)/1000
+
+MSE_tilde/MSE_hat
+MSE_tilde/MSE_hat_noselect
+
+MSE_tilde
+MSE_hat
+MSE_hat_noselect
+```
+
+```{r}
+set.seed(4321)
+p_tilde_data=c()
+p_hat_data=c()
+p_hat_noselect_data=c()
+
+for (i in 1:1000){
+  p=0.02
+  k=5
+  m=500
+  pi_1=0.95
+  pi_0=0.95
+  S1=0.999
+  S0=0.999
+  D=0.1*p
+  d=matrix(rbinom(k*m,size=1,prob=p), nrow=k)
+  gresult=c()
+  for (h in 1:m){
+    if(sum(d[,h])>0){
+      gresult=c(gresult, rbinom(1,1,pi_1))
+    }else{
+      gresult=c(gresult, rbinom(1,1,1-pi_0))
+    }
+  }
+  m_1=sum(gresult)
+  
+  m_1i=rep(0,k+1)
+  retest=which(gresult==1)
+  R=0
+  for (r in retest){
+    R=0
+    for(d_1 in d[,r]){
+      if(d_1>0){
+        R=R+rbinom(1,1,S1)
+      }else{
+        R=R+rbinom(1,1,1-S0)
+      }
+    }
+    m_1i[R+1]=m_1i[R+1]+1
+  }
+  
+  g_tilde=m_1/m
+  p_tilde=1-((pi_1-min(pi_1,max(1-pi_0,g_tilde)))/(pi_0+pi_1-1))^(1/k)
+  
+  if(p_tilde==1){
+    v_tilde=0
+  }else{
+    v_tilde=g_tilde*(1-g_tilde)*(1-p_tilde)^(2-2*k)/((pi_1+pi_0-1)^2*k^2*m)
+  }
+  #开始模拟两个loss function的估计量，只有在v_tilde>0，筛选程序有效的时候才进行估计
+  
+  g_tilde_j=c()
+  p_tilde_j=c()
+  v_tilde_j=c()
+    
+  j=1
+  #辅助样本不允许样本方差为0的情况
+  while(j<6){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  while(j<9){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p+D
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  tran = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j,w = 1,eta = NULL)
+  tran_noselect = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j, screen = F)
+    
+  p_tilde_data = c(p_tilde_data, p_tilde)
+  p_hat_data = c(p_hat_data, tran$p_hat)
+  p_hat_noselect_data = c(p_hat_noselect_data, tran_noselect$p_hat)
+}
+
+MSE_tilde=sum((p_tilde_data-p)^2)/1000
+MSE_hat=sum((p_hat_data-p)^2)/1000
+MSE_hat_noselect=sum((p_hat_noselect_data-p)^2)/1000
+
+MSE_tilde/MSE_hat
+MSE_tilde/MSE_hat_noselect
+
+MSE_tilde
+MSE_hat
+MSE_hat_noselect
+```
+
+```{r}
+set.seed(4321)
+p_tilde_data=c()
+p_hat_data=c()
+p_hat_noselect_data=c()
+
+for (i in 1:1000){
+  p=0.02
+  k=10
+  m=500
+  pi_1=0.95
+  pi_0=0.95
+  S1=0.999
+  S0=0.999
+  D=0.1*p
+  d=matrix(rbinom(k*m,size=1,prob=p), nrow=k)
+  gresult=c()
+  for (h in 1:m){
+    if(sum(d[,h])>0){
+      gresult=c(gresult, rbinom(1,1,pi_1))
+    }else{
+      gresult=c(gresult, rbinom(1,1,1-pi_0))
+    }
+  }
+  m_1=sum(gresult)
+  
+  m_1i=rep(0,k+1)
+  retest=which(gresult==1)
+  R=0
+  for (r in retest){
+    R=0
+    for(d_1 in d[,r]){
+      if(d_1>0){
+        R=R+rbinom(1,1,S1)
+      }else{
+        R=R+rbinom(1,1,1-S0)
+      }
+    }
+    m_1i[R+1]=m_1i[R+1]+1
+  }
+  
+  g_tilde=m_1/m
+  p_tilde=1-((pi_1-min(pi_1,max(1-pi_0,g_tilde)))/(pi_0+pi_1-1))^(1/k)
+  
+  if(p_tilde==1){
+    v_tilde=0
+  }else{
+    v_tilde=g_tilde*(1-g_tilde)*(1-p_tilde)^(2-2*k)/((pi_1+pi_0-1)^2*k^2*m)
+  }
+  #开始模拟两个loss function的估计量，只有在v_tilde>0，筛选程序有效的时候才进行估计
+  
+  g_tilde_j=c()
+  p_tilde_j=c()
+  v_tilde_j=c()
+    
+  j=1
+  #辅助样本不允许样本方差为0的情况
+  while(j<6){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  while(j<9){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p+D
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  tran = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j,w = 1,eta = NULL)
+  tran_noselect = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j, screen = F)
+    
+  p_tilde_data = c(p_tilde_data, p_tilde)
+  p_hat_data = c(p_hat_data, tran$p_hat)
+  p_hat_noselect_data = c(p_hat_noselect_data, tran_noselect$p_hat)
+}
+
+MSE_tilde=sum((p_tilde_data-p)^2)/1000
+MSE_hat=sum((p_hat_data-p)^2)/1000
+MSE_hat_noselect=sum((p_hat_noselect_data-p)^2)/1000
+
+MSE_tilde/MSE_hat
+MSE_tilde/MSE_hat_noselect
+
+MSE_tilde
+MSE_hat
+MSE_hat_noselect
+```
+
+```{r}
+set.seed(4321)
+p_tilde_data=c()
+p_hat_data=c()
+p_hat_noselect_data=c()
+
+for (i in 1:1000){
+  p=0.05
+  k=5
+  m=500
+  pi_1=0.95
+  pi_0=0.95
+  S1=0.999
+  S0=0.999
+  D=0.1*p
+  d=matrix(rbinom(k*m,size=1,prob=p), nrow=k)
+  gresult=c()
+  for (h in 1:m){
+    if(sum(d[,h])>0){
+      gresult=c(gresult, rbinom(1,1,pi_1))
+    }else{
+      gresult=c(gresult, rbinom(1,1,1-pi_0))
+    }
+  }
+  m_1=sum(gresult)
+  
+  m_1i=rep(0,k+1)
+  retest=which(gresult==1)
+  R=0
+  for (r in retest){
+    R=0
+    for(d_1 in d[,r]){
+      if(d_1>0){
+        R=R+rbinom(1,1,S1)
+      }else{
+        R=R+rbinom(1,1,1-S0)
+      }
+    }
+    m_1i[R+1]=m_1i[R+1]+1
+  }
+  
+  g_tilde=m_1/m
+  p_tilde=1-((pi_1-min(pi_1,max(1-pi_0,g_tilde)))/(pi_0+pi_1-1))^(1/k)
+  
+  if(p_tilde==1){
+    v_tilde=0
+  }else{
+    v_tilde=g_tilde*(1-g_tilde)*(1-p_tilde)^(2-2*k)/((pi_1+pi_0-1)^2*k^2*m)
+  }
+  #开始模拟两个loss function的估计量，只有在v_tilde>0，筛选程序有效的时候才进行估计
+  
+  g_tilde_j=c()
+  p_tilde_j=c()
+  v_tilde_j=c()
+    
+  j=1
+  #辅助样本不允许样本方差为0的情况
+  while(j<6){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  while(j<9){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p+D
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  tran = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j,w = 1,eta = NULL)
+  tran_noselect = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j, screen = F)
+    
+  p_tilde_data = c(p_tilde_data, p_tilde)
+  p_hat_data = c(p_hat_data, tran$p_hat)
+  p_hat_noselect_data = c(p_hat_noselect_data, tran_noselect$p_hat)
+}
+
+MSE_tilde=sum((p_tilde_data-p)^2)/1000
+MSE_hat=sum((p_hat_data-p)^2)/1000
+MSE_hat_noselect=sum((p_hat_noselect_data-p)^2)/1000
+
+MSE_tilde/MSE_hat
+MSE_tilde/MSE_hat_noselect
+
+MSE_tilde
+MSE_hat
+MSE_hat_noselect
+```
+
+```{r}
+set.seed(4321)
+p_tilde_data=c()
+p_hat_data=c()
+p_hat_noselect_data=c()
+
+for (i in 1:1000){
+  p=0.05
+  k=10
+  m=500
+  pi_1=0.95
+  pi_0=0.95
+  S1=0.999
+  S0=0.999
+  D=0.1*p
+  d=matrix(rbinom(k*m,size=1,prob=p), nrow=k)
+  gresult=c()
+  for (h in 1:m){
+    if(sum(d[,h])>0){
+      gresult=c(gresult, rbinom(1,1,pi_1))
+    }else{
+      gresult=c(gresult, rbinom(1,1,1-pi_0))
+    }
+  }
+  m_1=sum(gresult)
+  
+  m_1i=rep(0,k+1)
+  retest=which(gresult==1)
+  R=0
+  for (r in retest){
+    R=0
+    for(d_1 in d[,r]){
+      if(d_1>0){
+        R=R+rbinom(1,1,S1)
+      }else{
+        R=R+rbinom(1,1,1-S0)
+      }
+    }
+    m_1i[R+1]=m_1i[R+1]+1
+  }
+  
+  g_tilde=m_1/m
+  p_tilde=1-((pi_1-min(pi_1,max(1-pi_0,g_tilde)))/(pi_0+pi_1-1))^(1/k)
+  
+  if(p_tilde==1){
+    v_tilde=0
+  }else{
+    v_tilde=g_tilde*(1-g_tilde)*(1-p_tilde)^(2-2*k)/((pi_1+pi_0-1)^2*k^2*m)
+  }
+  #开始模拟两个loss function的估计量，只有在v_tilde>0，筛选程序有效的时候才进行估计
+  
+  g_tilde_j=c()
+  p_tilde_j=c()
+  v_tilde_j=c()
+    
+  j=1
+  #辅助样本不允许样本方差为0的情况
+  while(j<6){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  while(j<9){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p+D
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  tran = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j,w = 1,eta = NULL)
+  tran_noselect = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j, screen = F)
+    
+  p_tilde_data = c(p_tilde_data, p_tilde)
+  p_hat_data = c(p_hat_data, tran$p_hat)
+  p_hat_noselect_data = c(p_hat_noselect_data, tran_noselect$p_hat)
+}
+
+MSE_tilde=sum((p_tilde_data-p)^2)/1000
+MSE_hat=sum((p_hat_data-p)^2)/1000
+MSE_hat_noselect=sum((p_hat_noselect_data-p)^2)/1000
+
+MSE_tilde/MSE_hat
+MSE_tilde/MSE_hat_noselect
+
+MSE_tilde
+MSE_hat
+MSE_hat_noselect
+```
+
+# D = 0.8p
+```{r}
+set.seed(4321)
+p_tilde_data=c()
+p_hat_data=c()
+p_hat_noselect_data=c()
+
+for (i in 1:1000){
+  p=0.01
+  k=5
+  m=500
+  pi_1=0.95
+  pi_0=0.95
+  S1=0.999
+  S0=0.999
+  D=0.8*p
+  d=matrix(rbinom(k*m,size=1,prob=p), nrow=k)
+  gresult=c()
+  for (h in 1:m){
+    if(sum(d[,h])>0){
+      gresult=c(gresult, rbinom(1,1,pi_1))
+    }else{
+      gresult=c(gresult, rbinom(1,1,1-pi_0))
+    }
+  }
+  m_1=sum(gresult)
+  
+  m_1i=rep(0,k+1)
+  retest=which(gresult==1)
+  R=0
+  for (r in retest){
+    R=0
+    for(d_1 in d[,r]){
+      if(d_1>0){
+        R=R+rbinom(1,1,S1)
+      }else{
+        R=R+rbinom(1,1,1-S0)
+      }
+    }
+    m_1i[R+1]=m_1i[R+1]+1
+  }
+  
+  g_tilde=m_1/m
+  p_tilde=1-((pi_1-min(pi_1,max(1-pi_0,g_tilde)))/(pi_0+pi_1-1))^(1/k)
+  
+  if(p_tilde==1){
+    v_tilde=0
+  }else{
+    v_tilde=g_tilde*(1-g_tilde)*(1-p_tilde)^(2-2*k)/((pi_1+pi_0-1)^2*k^2*m)
+  }
+  #开始模拟两个loss function的估计量，只有在v_tilde>0，筛选程序有效的时候才进行估计
+  
+  g_tilde_j=c()
+  p_tilde_j=c()
+  v_tilde_j=c()
+    
+  j=1
+  #辅助样本不允许样本方差为0的情况
+  while(j<6){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  while(j<9){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p+D
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  tran = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j,w = 1,eta = NULL)
+  tran_noselect = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j, screen = F)
+    
+  p_tilde_data = c(p_tilde_data, p_tilde)
+  p_hat_data = c(p_hat_data, tran$p_hat)
+  p_hat_noselect_data = c(p_hat_noselect_data, tran_noselect$p_hat)
+}
+
+MSE_tilde=sum((p_tilde_data-p)^2)/1000
+MSE_hat=sum((p_hat_data-p)^2)/1000
+MSE_hat_noselect=sum((p_hat_noselect_data-p)^2)/1000
+
+MSE_tilde/MSE_hat
+MSE_tilde/MSE_hat_noselect
+
+MSE_tilde
+MSE_hat
+MSE_hat_noselect
+```
+
+```{r}
+set.seed(4321)
+p_tilde_data=c()
+p_hat_data=c()
+p_hat_noselect_data=c()
+
+for (i in 1:1000){
+  p=0.01
+  k=10
+  m=500
+  pi_1=0.95
+  pi_0=0.95
+  S1=0.999
+  S0=0.999
+  D=0.8*p
+  d=matrix(rbinom(k*m,size=1,prob=p), nrow=k)
+  gresult=c()
+  for (h in 1:m){
+    if(sum(d[,h])>0){
+      gresult=c(gresult, rbinom(1,1,pi_1))
+    }else{
+      gresult=c(gresult, rbinom(1,1,1-pi_0))
+    }
+  }
+  m_1=sum(gresult)
+  
+  m_1i=rep(0,k+1)
+  retest=which(gresult==1)
+  R=0
+  for (r in retest){
+    R=0
+    for(d_1 in d[,r]){
+      if(d_1>0){
+        R=R+rbinom(1,1,S1)
+      }else{
+        R=R+rbinom(1,1,1-S0)
+      }
+    }
+    m_1i[R+1]=m_1i[R+1]+1
+  }
+  
+  g_tilde=m_1/m
+  p_tilde=1-((pi_1-min(pi_1,max(1-pi_0,g_tilde)))/(pi_0+pi_1-1))^(1/k)
+  
+  if(p_tilde==1){
+    v_tilde=0
+  }else{
+    v_tilde=g_tilde*(1-g_tilde)*(1-p_tilde)^(2-2*k)/((pi_1+pi_0-1)^2*k^2*m)
+  }
+  #开始模拟两个loss function的估计量，只有在v_tilde>0，筛选程序有效的时候才进行估计
+  
+  g_tilde_j=c()
+  p_tilde_j=c()
+  v_tilde_j=c()
+    
+  j=1
+  #辅助样本不允许样本方差为0的情况
+  while(j<6){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  while(j<9){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p+D
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  tran = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j,w = 1,eta = NULL)
+  tran_noselect = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j, screen = F)
+    
+  p_tilde_data = c(p_tilde_data, p_tilde)
+  p_hat_data = c(p_hat_data, tran$p_hat)
+  p_hat_noselect_data = c(p_hat_noselect_data, tran_noselect$p_hat)
+}
+
+MSE_tilde=sum((p_tilde_data-p)^2)/1000
+MSE_hat=sum((p_hat_data-p)^2)/1000
+MSE_hat_noselect=sum((p_hat_noselect_data-p)^2)/1000
+
+MSE_tilde/MSE_hat
+MSE_tilde/MSE_hat_noselect
+
+MSE_tilde
+MSE_hat
+MSE_hat_noselect
+```
+
+```{r}
+set.seed(4321)
+p_tilde_data=c()
+p_hat_data=c()
+p_hat_noselect_data=c()
+
+for (i in 1:1000){
+  p=0.02
+  k=5
+  m=500
+  pi_1=0.95
+  pi_0=0.95
+  S1=0.999
+  S0=0.999
+  D=0.8*p
+  d=matrix(rbinom(k*m,size=1,prob=p), nrow=k)
+  gresult=c()
+  for (h in 1:m){
+    if(sum(d[,h])>0){
+      gresult=c(gresult, rbinom(1,1,pi_1))
+    }else{
+      gresult=c(gresult, rbinom(1,1,1-pi_0))
+    }
+  }
+  m_1=sum(gresult)
+  
+  m_1i=rep(0,k+1)
+  retest=which(gresult==1)
+  R=0
+  for (r in retest){
+    R=0
+    for(d_1 in d[,r]){
+      if(d_1>0){
+        R=R+rbinom(1,1,S1)
+      }else{
+        R=R+rbinom(1,1,1-S0)
+      }
+    }
+    m_1i[R+1]=m_1i[R+1]+1
+  }
+  
+  g_tilde=m_1/m
+  p_tilde=1-((pi_1-min(pi_1,max(1-pi_0,g_tilde)))/(pi_0+pi_1-1))^(1/k)
+  
+  if(p_tilde==1){
+    v_tilde=0
+  }else{
+    v_tilde=g_tilde*(1-g_tilde)*(1-p_tilde)^(2-2*k)/((pi_1+pi_0-1)^2*k^2*m)
+  }
+  #开始模拟两个loss function的估计量，只有在v_tilde>0，筛选程序有效的时候才进行估计
+  
+  g_tilde_j=c()
+  p_tilde_j=c()
+  v_tilde_j=c()
+    
+  j=1
+  #辅助样本不允许样本方差为0的情况
+  while(j<6){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  while(j<9){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p+D
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  tran = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j,w = 1,eta = NULL)
+  tran_noselect = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j, screen = F)
+    
+  p_tilde_data = c(p_tilde_data, p_tilde)
+  p_hat_data = c(p_hat_data, tran$p_hat)
+  p_hat_noselect_data = c(p_hat_noselect_data, tran_noselect$p_hat)
+}
+
+MSE_tilde=sum((p_tilde_data-p)^2)/1000
+MSE_hat=sum((p_hat_data-p)^2)/1000
+MSE_hat_noselect=sum((p_hat_noselect_data-p)^2)/1000
+
+MSE_tilde/MSE_hat
+MSE_tilde/MSE_hat_noselect
+
+MSE_tilde
+MSE_hat
+MSE_hat_noselect
+```
+
+```{r}
+set.seed(4321)
+p_tilde_data=c()
+p_hat_data=c()
+p_hat_noselect_data=c()
+
+for (i in 1:1000){
+  p=0.02
+  k=10
+  m=500
+  pi_1=0.95
+  pi_0=0.95
+  S1=0.999
+  S0=0.999
+  D=0.8*p
+  d=matrix(rbinom(k*m,size=1,prob=p), nrow=k)
+  gresult=c()
+  for (h in 1:m){
+    if(sum(d[,h])>0){
+      gresult=c(gresult, rbinom(1,1,pi_1))
+    }else{
+      gresult=c(gresult, rbinom(1,1,1-pi_0))
+    }
+  }
+  m_1=sum(gresult)
+  
+  m_1i=rep(0,k+1)
+  retest=which(gresult==1)
+  R=0
+  for (r in retest){
+    R=0
+    for(d_1 in d[,r]){
+      if(d_1>0){
+        R=R+rbinom(1,1,S1)
+      }else{
+        R=R+rbinom(1,1,1-S0)
+      }
+    }
+    m_1i[R+1]=m_1i[R+1]+1
+  }
+  
+  g_tilde=m_1/m
+  p_tilde=1-((pi_1-min(pi_1,max(1-pi_0,g_tilde)))/(pi_0+pi_1-1))^(1/k)
+  
+  if(p_tilde==1){
+    v_tilde=0
+  }else{
+    v_tilde=g_tilde*(1-g_tilde)*(1-p_tilde)^(2-2*k)/((pi_1+pi_0-1)^2*k^2*m)
+  }
+  #开始模拟两个loss function的估计量，只有在v_tilde>0，筛选程序有效的时候才进行估计
+  
+  g_tilde_j=c()
+  p_tilde_j=c()
+  v_tilde_j=c()
+    
+  j=1
+  #辅助样本不允许样本方差为0的情况
+  while(j<6){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  while(j<9){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p+D
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  tran = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j,w = 1,eta = NULL)
+  tran_noselect = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j, screen = F)
+    
+  p_tilde_data = c(p_tilde_data, p_tilde)
+  p_hat_data = c(p_hat_data, tran$p_hat)
+  p_hat_noselect_data = c(p_hat_noselect_data, tran_noselect$p_hat)
+}
+
+MSE_tilde=sum((p_tilde_data-p)^2)/1000
+MSE_hat=sum((p_hat_data-p)^2)/1000
+MSE_hat_noselect=sum((p_hat_noselect_data-p)^2)/1000
+
+MSE_tilde/MSE_hat
+MSE_tilde/MSE_hat_noselect
+
+MSE_tilde
+MSE_hat
+MSE_hat_noselect
+```
+
+```{r}
+set.seed(4321)
+p_tilde_data=c()
+p_hat_data=c()
+p_hat_noselect_data=c()
+
+for (i in 1:1000){
+  p=0.05
+  k=5
+  m=500
+  pi_1=0.95
+  pi_0=0.95
+  S1=0.999
+  S0=0.999
+  D=0.8*p
+  d=matrix(rbinom(k*m,size=1,prob=p), nrow=k)
+  gresult=c()
+  for (h in 1:m){
+    if(sum(d[,h])>0){
+      gresult=c(gresult, rbinom(1,1,pi_1))
+    }else{
+      gresult=c(gresult, rbinom(1,1,1-pi_0))
+    }
+  }
+  m_1=sum(gresult)
+  
+  m_1i=rep(0,k+1)
+  retest=which(gresult==1)
+  R=0
+  for (r in retest){
+    R=0
+    for(d_1 in d[,r]){
+      if(d_1>0){
+        R=R+rbinom(1,1,S1)
+      }else{
+        R=R+rbinom(1,1,1-S0)
+      }
+    }
+    m_1i[R+1]=m_1i[R+1]+1
+  }
+  
+  g_tilde=m_1/m
+  p_tilde=1-((pi_1-min(pi_1,max(1-pi_0,g_tilde)))/(pi_0+pi_1-1))^(1/k)
+  
+  if(p_tilde==1){
+    v_tilde=0
+  }else{
+    v_tilde=g_tilde*(1-g_tilde)*(1-p_tilde)^(2-2*k)/((pi_1+pi_0-1)^2*k^2*m)
+  }
+  #开始模拟两个loss function的估计量，只有在v_tilde>0，筛选程序有效的时候才进行估计
+  
+  g_tilde_j=c()
+  p_tilde_j=c()
+  v_tilde_j=c()
+    
+  j=1
+  #辅助样本不允许样本方差为0的情况
+  while(j<6){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  while(j<9){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p+D
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  tran = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j,w = 1,eta = NULL)
+  tran_noselect = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j, screen = F)
+    
+  p_tilde_data = c(p_tilde_data, p_tilde)
+  p_hat_data = c(p_hat_data, tran$p_hat)
+  p_hat_noselect_data = c(p_hat_noselect_data, tran_noselect$p_hat)
+}
+
+MSE_tilde=sum((p_tilde_data-p)^2)/1000
+MSE_hat=sum((p_hat_data-p)^2)/1000
+MSE_hat_noselect=sum((p_hat_noselect_data-p)^2)/1000
+
+MSE_tilde/MSE_hat
+MSE_tilde/MSE_hat_noselect
+
+MSE_tilde
+MSE_hat
+MSE_hat_noselect
+```
+
+```{r}
+set.seed(4321)
+p_tilde_data=c()
+p_hat_data=c()
+p_hat_noselect_data=c()
+
+for (i in 1:1000){
+  p=0.05
+  k=10
+  m=500
+  pi_1=0.95
+  pi_0=0.95
+  S1=0.999
+  S0=0.999
+  D=0.8*p
+  d=matrix(rbinom(k*m,size=1,prob=p), nrow=k)
+  gresult=c()
+  for (h in 1:m){
+    if(sum(d[,h])>0){
+      gresult=c(gresult, rbinom(1,1,pi_1))
+    }else{
+      gresult=c(gresult, rbinom(1,1,1-pi_0))
+    }
+  }
+  m_1=sum(gresult)
+  
+  m_1i=rep(0,k+1)
+  retest=which(gresult==1)
+  R=0
+  for (r in retest){
+    R=0
+    for(d_1 in d[,r]){
+      if(d_1>0){
+        R=R+rbinom(1,1,S1)
+      }else{
+        R=R+rbinom(1,1,1-S0)
+      }
+    }
+    m_1i[R+1]=m_1i[R+1]+1
+  }
+  
+  g_tilde=m_1/m
+  p_tilde=1-((pi_1-min(pi_1,max(1-pi_0,g_tilde)))/(pi_0+pi_1-1))^(1/k)
+  
+  if(p_tilde==1){
+    v_tilde=0
+  }else{
+    v_tilde=g_tilde*(1-g_tilde)*(1-p_tilde)^(2-2*k)/((pi_1+pi_0-1)^2*k^2*m)
+  }
+  #开始模拟两个loss function的估计量，只有在v_tilde>0，筛选程序有效的时候才进行估计
+  
+  g_tilde_j=c()
+  p_tilde_j=c()
+  v_tilde_j=c()
+    
+  j=1
+  #辅助样本不允许样本方差为0的情况
+  while(j<6){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  while(j<9){
+    k_j=sample(c(5,10),size=1)
+    m_j=sample(2000:5000,size=1,replace = T)
+    pi_1_j=runif(1, min = 0.9, max = 0.999)
+    pi_0_j=runif(1, min = 0.9, max = 0.999)
+    p_j=p+D
+    g_j=pi_1_j-(pi_0_j+pi_1_j-1)*(1-p_j)^k_j
+    x=rbinom(m_j,1,g_j)
+    if(sum(x)/m_j > 1-pi_0_j & sum(x)/m_j < pi_1_j){
+      p_tilde_j[j]=1-((pi_1_j-sum(x)/m_j)/(pi_0_j+pi_1_j-1))^(1/k_j)
+      v_tilde_j[j]=(sum(x)/m_j)*(1-sum(x)/m_j)*(1-p_tilde_j[j])^(2-2*k_j)/((pi_1_j+pi_0_j-1)^2*k_j^2*m_j)
+      j=j+1
+    }
+  }
+  tran = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j,w = 1,eta = NULL)
+  tran_noselect = GT_tran(m,k,pi_0,pi_1,m_1,p_tilde_j,v_tilde_j, screen = F)
+    
+  p_tilde_data = c(p_tilde_data, p_tilde)
+  p_hat_data = c(p_hat_data, tran$p_hat)
+  p_hat_noselect_data = c(p_hat_noselect_data, tran_noselect$p_hat)
+}
+
+MSE_tilde=sum((p_tilde_data-p)^2)/1000
+MSE_hat=sum((p_hat_data-p)^2)/1000
+MSE_hat_noselect=sum((p_hat_noselect_data-p)^2)/1000
+
+MSE_tilde/MSE_hat
+MSE_tilde/MSE_hat_noselect
+
+MSE_tilde
+MSE_hat
+MSE_hat_noselect
+```
+
+
